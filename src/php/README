@@ -1,0 +1,10 @@
+1. Start mysql server
+    a. If not installed:
+        sudo apt-get install mysql-server
+        sudo apt-get install php5-mysql
+
+    b. Start mysql server.
+        service mysql start OR /etc/init.d/mysql start 
+
+
+2. 

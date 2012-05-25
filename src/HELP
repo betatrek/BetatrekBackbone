@@ -1,0 +1,8 @@
+1. Reset mysql password.
+
+    sudo mysqld_safe --skip-grant-tables
+    UPDATE mysql.user SET Password=PASSWORD('passw0rd');
+    FLUSH PRIVILEGES;
+
+2. Connect to mysql database
+   sudo mysql -u root 
