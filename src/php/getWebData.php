@@ -3,34 +3,84 @@ include('../../include/htdocs/simplehtmldom_1_5/simple_html_dom.php');
 include_once 'ticker.php';
 include_once 'db.php';
 
-/************************************
- Input validation 
- ************************************/
 
-function getGoogleTickerData($Ticker)
+function getYahooData($Ticker)
 {
-    $t = new Ticker();
+    $yf_page = "./data/".$TKR_SYM."_yf_historic.csv";
 
-    $URL = "http://www.google.com/finance?q=".$Ticker;
-    $gf_page = "../../data/".$Ticker."_gf.html";
-
+    $URL = "http://ichart.finance.yahoo.com/table.csv?s=".$TKR_SYM."&a=00&b=1&c=1991&d=10&e=22&f=2011&g=d&ignore=.csv";
     print "$URL\n";
-    /* Gt the data from google finance */
-    system("curl --silent -o $gf_page \"$URL\"");
+
+    system("curl --silent -o $yf_page \"$URL\"");
+
+}
+
+function getGoogleData($Ticker)
+{
+    if (empty($Ticker)) {
+        print "Error: ticker empty\n";
+        return;
+    }
+    print "$Ticker: ";
+
+    $t = new Stock();
+
+    /* Get the data from google finance */
+    $URL = "http://www.google.com/finance?q=".$Ticker;
+    $URL_history = "http://www.google.com/finance/historical?q=".$Ticker;
+    $gf_stock = "../../data/".$Ticker."_gf.html";
+    $gf_history = "../../data/".$Ticker."_gf_history.html";
+    system("curl --silent -o $gf_stock \"$URL\"");
+    system("curl --silent -o $gf_history \"$URL_history\"");
 
     /************************************
-     Create HTML DOM object 
+     Create HTML DOM objects
      ************************************/
-    $html = file_get_html($gf_page);
-    // echo $html->plaintext;
+    $gf_html = file_get_html($gf_stock);
+    $gf_history_html = file_get_html($gf_history);
+    // echo $gf_html->plaintext;
 
     /************************************
-     Extract the required data 
+     Extract the current data
      ************************************/
     // Find the information tables
-    $snapdata0 = $html->find('table.snap-data', 0);
-    $snapdata1 = $html->find('table.snap-data', 1);
+    $companydata = $gf_html->find('div#companyheader', 0);
+    $snapdata0 = $gf_html->find('table.snap-data', 0);
+    $snapdata1 = $gf_html->find('table.snap-data', 1);
+
+    // Find Company info.
+    $companyname = $companydata->find('h3', 0);
+    $t->cname = html_entity_decode($companyname->plaintext);
+    print "$t->cname\n";
+
+    // Find the current evaluation
+    $cureval = $gf_html->find('span[class=pr]', 0)->plaintext;
+    // $cureval = $gf_html->find('span[id=ref_22144_l]', 0);
+
+    // Extract snapdata 
+    $range = $snapdata0->find('tr', 0)->find('td', 1)->plaintext;
+    $range_52 = $snapdata0->find('tr', 1)->find('td', 1)->plaintext;
+    $open = $snapdata0->find('tr', 2)->find('td', 1)->plaintext;
+    $volume = $snapdata0->find('tr', 3)->find('td', 1)->plaintext;
+    $mkt_cap = $snapdata0->find('tr', 4)->find('td', 1)->plaintext;
+    $PE= $snapdata0->find('tr', 5)->find('td', 1)->plaintext;
+
+    $div_yield = $snapdata1->find('tr', 0)->find('td', 1)->plaintext;
+    $EPS= $snapdata1->find('tr', 1)->find('td', 1)->plaintext;
+    $shares= $snapdata1->find('tr', 2)->find('td', 1)->plaintext;
+    $beta= $snapdata1->find('tr', 3)->find('td', 1)->plaintext;
+    $inst_own= $snapdata1->find('tr', 4)->find('td', 1)->plaintext;
+
+    /* Insert the data into database. */
+    $t->ticker = $Ticker;
+    $t->evaluation = floatval($cureval);
+    $t->volume = intval($volume);
+    $t->mkt_cap = intval($mkt_cap);
+    $t->beta = floatval($beta);
+    $t->insertStock();
+
     /* Print these tables */
+    /*
     foreach($snapdata0->find('tr') as $row){
 
         print "\n";
@@ -38,7 +88,6 @@ function getGoogleTickerData($Ticker)
         foreach($row->find('td') as $cell) {
 
             // push the cell's text to the array
-            // print "$cell ";
             print "$cell->innertext";
         }
 
@@ -62,32 +111,7 @@ function getGoogleTickerData($Ticker)
     }
     print "\n";
     print "\n";
-
-    // Find the current evaluation
-    $cureval = $html->find('span[class=pr]', 0)->plaintext;
-    // $cureval = $html->find('span[id=ref_22144_l]', 0);
-
-    // Extract snapdata 
-    $range = $snapdata0->find('tr', 0)->find('td', 1)->plaintext;
-    $range_52 = $snapdata0->find('tr', 1)->find('td', 1)->plaintext;
-    $open = $snapdata0->find('tr', 2)->find('td', 1)->plaintext;
-    $volume = $snapdata0->find('tr', 3)->find('td', 1)->plaintext;
-    $mkt_cap = $snapdata0->find('tr', 4)->find('td', 1)->plaintext;
-    $PE= $snapdata0->find('tr', 5)->find('td', 1)->plaintext;
-
-    $div_yield = $snapdata1->find('tr', 0)->find('td', 1)->plaintext;
-    $EPS= $snapdata1->find('tr', 1)->find('td', 1)->plaintext;
-    $shares= $snapdata1->find('tr', 2)->find('td', 1)->plaintext;
-    $beta= $snapdata1->find('tr', 3)->find('td', 1)->plaintext;
-    $inst_own= $snapdata1->find('tr', 4)->find('td', 1)->plaintext;
-
-    /* Insert the data into database. */
-    $t->ticker = $Ticker;
-    $t->evaluation = floatval($cureval);
-    $t->volume = intval($volume);
-    $t->mkt_cap = intval($mkt_cap);
-    $t->beta = floatval($beta);
-    $t->insertTicker();
+    */
 
     /* Display the retrieved data */
     /*
@@ -106,17 +130,13 @@ function getGoogleTickerData($Ticker)
     print "**********\n";
     */
 
-}
-
-function getYahooTickerData($Ticker)
-{
-    $yf_page = "./data/".$TKR_SYM."_yf_historic.csv";
-
-    $URL = "http://ichart.finance.yahoo.com/table.csv?s=".$TKR_SYM."&a=00&b=1&c=1991&d=10&e=22&f=2011&g=d&ignore=.csv";
-    print "$URL\n";
-
-    system("curl --silent -o $yf_page \"$URL\"");
-
+    /************************************
+     Extract the historical data
+     ************************************/
+    $histdata = $gf_history_html->find('table.historical_price', 0);
+    // print "$histdata->plaintext\n";
+    $history = $histdata->find('tr', 0);
+    print $history->plaintext;
 }
 
 ?>

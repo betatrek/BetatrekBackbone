@@ -28,7 +28,7 @@ function create_database($mysql_conn, $database)
 
     if (mysql_query("CREATE DATABASE $database",$mysql_conn))
     {
-        print $database." created\n";
+        print $database." database created\n";
     }
     else
     {
@@ -38,8 +38,10 @@ function create_database($mysql_conn, $database)
 
 function init_accounts_database($mysql_conn, $database) 
 {
-    $accounts_sql = "CREATE TABLE $database.Accounts(username varchar(16), password varchar(32),
-                        email varchar(80), fname varchar(32), lname varchar(32))";
+    select_database($mysql_conn, $database);
+    $accounts_sql = "CREATE TABLE $database.Accounts(username varchar(16), 
+                     password varchar(32), email varchar(80), fname varchar(32),
+                     lname varchar(32))";
     if (!mysql_query($accounts_sql ,$mysql_conn))
     {
         print "Error creating Accounts table: " . mysql_error() . "\n";
@@ -48,11 +50,29 @@ function init_accounts_database($mysql_conn, $database)
 
 function init_finance_database($mysql_conn, $database) 
 {
-    $google_sql = "CREATE TABLE $database.Google_data(ticker varchar(8), evaluation float, volume int, 
-                    mkt_cap int, beta float)";
+    select_database($mysql_conn, $database);
+
+    $google_sql = "CREATE TABLE $database.Stock_Ticker(ticker varchar(8) NOT NULL, 
+                   PRIMARY KEY (ticker), cname varchar(128) NOT NULL)";
     if (!mysql_query($google_sql, $mysql_conn))
     {
-        print "Error creating google database: " . mysql_error() . "\n";
+        print "Error creating ticker table: " . mysql_error() . "\n";
+    }
+
+    $google_sql = "CREATE TABLE $database.Stock(ticker varchar(8) NOT NULL, 
+                   PRIMARY KEY (ticker), evaluation float, volume int, 
+                   mkt_cap int, beta float)";
+    if (!mysql_query($google_sql, $mysql_conn))
+    {
+        print "Error creating Stock: " . mysql_error() . "\n";
+    }
+
+    $google_sql = "CREATE TABLE $database.Stock_History(ticker varchar(8) NOT NULL, 
+                   day DATE, PRIMARY KEY (ticker, day), beta float, open int,
+                   high int, low int, closed int, volume int)";
+    if (!mysql_query($google_sql, $mysql_conn))
+    {
+        print "Error creating historic data table: " . mysql_error() . "\n";
     }
 }
 
@@ -65,10 +85,8 @@ function init_database()
     create_database($mysql_conn, $acc_db);
     create_database($mysql_conn, $fin_db);
 
-    select_database($mysql_conn, $acc_db);
-    init_accounts_database($mysql_conn, $acc_db);
-    select_database($mysql_conn, $fin_db);
     init_finance_database($mysql_conn, $fin_db);
+    init_accounts_database($mysql_conn, $acc_db);
 }
 
 ?>
