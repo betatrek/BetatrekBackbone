@@ -1,5 +1,5 @@
 <?php
-include('/opt/lampp/htdocs/simplehtmldom_1_5/simple_html_dom.php');
+include('../../include/htdocs/simplehtmldom_1_5/simple_html_dom.php');
 include_once 'ticker.php';
 include_once 'db.php';
 
