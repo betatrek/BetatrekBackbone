@@ -1,5 +1,7 @@
 <?php
 include('/opt/lampp/htdocs/simplehtmldom_1_5/simple_html_dom.php');
+include_once 'ticker.php';
+include_once 'db.php';
 
 /************************************
  Input validation 
@@ -7,9 +9,10 @@ include('/opt/lampp/htdocs/simplehtmldom_1_5/simple_html_dom.php');
 
 function getGoogleTickerData($Ticker)
 {
+    $t = new Ticker();
 
-    $gf_page = "../../data/".$Ticker."_gf.html";
     $URL = "http://www.google.com/finance?q=".$Ticker;
+    $gf_page = "../../data/".$Ticker."_gf.html";
 
     print "$URL\n";
     /* Gt the data from google finance */
@@ -18,7 +21,6 @@ function getGoogleTickerData($Ticker)
     /************************************
      Create HTML DOM object 
      ************************************/
-    // $html = file_get_html('./data/AAPL.html');
     $html = file_get_html($gf_page);
     // echo $html->plaintext;
 
@@ -31,7 +33,6 @@ function getGoogleTickerData($Ticker)
     /* Print these tables */
     foreach($snapdata0->find('tr') as $row){
 
-        // echo "$row \n";
         print "\n";
 
         foreach($row->find('td') as $cell) {
@@ -48,13 +49,11 @@ function getGoogleTickerData($Ticker)
 
     foreach($snapdata1->find('tr') as $row){
 
-        // echo "$row \n";
         print "\n";
 
         foreach($row->find('td') as $cell) {
 
         // push the cell's text to the array
-        // print "$cell ";
         print "$cell->innertext";
         }
 
@@ -82,7 +81,16 @@ function getGoogleTickerData($Ticker)
     $beta= $snapdata1->find('tr', 3)->find('td', 1)->plaintext;
     $inst_own= $snapdata1->find('tr', 4)->find('td', 1)->plaintext;
 
+    /* Insert the data into database. */
+    $t->ticker = $Ticker;
+    $t->evaluation = floatval($cureval);
+    $t->volume = intval($volume);
+    $t->mkt_cap = intval($mkt_cap);
+    $t->beta = floatval($beta);
+    $t->insertTicker();
+
     /* Display the retrieved data */
+    /*
     print "Current evaluation: $cureval \n";
     print "Range: $range \n";
     print "52 W Range: $range_52 \n";
@@ -96,6 +104,7 @@ function getGoogleTickerData($Ticker)
     print "beta: $beta \n";
     print "inst/own: $inst_own \n";
     print "**********\n";
+    */
 
 }
 
@@ -109,9 +118,5 @@ function getYahooTickerData($Ticker)
     system("curl --silent -o $yf_page \"$URL\"");
 
 }
-
-
-$TKR_SYM = $argv[1];
-getGoogleTickerData($TKR_SYM);
 
 ?>

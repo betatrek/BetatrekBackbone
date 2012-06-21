@@ -1,14 +1,22 @@
 <?php 
 
-include 'db.php';
+include_once 'db.php';
 
 class User {
-    private   $username = null;
-    private   $password = null;
-    private   $email = null;
-    private   $fname = null;
-    private   $lname = null;
+    private $username = null;
+    private $password = null;
+    private $email = null;
+    public $fname = null;
+    public $lname = null;
     
+   function __construct() {
+        $this->username= "username";
+        $this->password = "password";
+        $this->email= "email";
+        $this->fname= "fname";
+        $this->lname= "lname";
+    }
+
     public function setUsername($username) {
         $this->username= $username;
     } 
@@ -35,12 +43,17 @@ class User {
 
     /* Inser the user into the database. */
     public function insertUser() {
-        $database = "betatrek";
+        $acc_db = "bt_user_accounts";
         $mysql_conn = connect_mysql();
-        connect_database($mysql_conn, $database);
-        mysql_query("INSERT INTO User (username, password, email,fname,lname) 
-                    VALUES($this->username, $this->password, $this->email, 
-                    $this->fname, $this->lname)",$mysql_conn);
+        select_database($mysql_conn, $acc_db);
+
+        $sql ="INSERT INTO Accounts (username, password, email, fname, lname) 
+            VALUES('$this->username', '$this->password', '$this->email', '$this->fname', '$this->lname')";
+
+        if(!mysql_query($sql,$mysql_conn))
+        {
+           print "Error inserting user\n";
+        }
         mysql_close($mysql_conn);
     }
     

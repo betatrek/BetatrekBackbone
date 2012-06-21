@@ -13,20 +13,7 @@ function connect_mysql()
     return $mysql_conn;
 }
 
-function create_database($mysql_conn, $database) 
-{
-
-    if (mysql_query("CREATE DATABASE $database",$mysql_conn))
-    {
-        print "Database created\n";
-    }
-    else
-    {
-        print "Error creating database: " . mysql_error() . "\n";
-    }
-}
-
-function connect_database($mysql_conn, $database) 
+function select_database($mysql_conn, $database) 
 {
     $db_selected = mysql_select_db($database, $mysql_conn);
     if (!$db_selected) {
@@ -36,36 +23,52 @@ function connect_database($mysql_conn, $database)
     return $db_selected;
 }
 
-function init_tables($mysql_conn, $database) 
+function create_database($mysql_conn, $database) 
 {
-    if (mysql_query("CREATE TABLE $database.User(username varchar(16), password varchar(16),
-                    email varchar(16), fname varchar(16), lname varchar(16))",$mysql_conn))
+
+    if (mysql_query("CREATE DATABASE $database",$mysql_conn))
     {
-        print "user data table\n";
+        print $database." created\n";
     }
     else
     {
         print "Error creating database: " . mysql_error() . "\n";
     }
+}
 
-    if (mysql_query("CREATE TABLE $database.GF_data(ticker varchar(8), eval float, beta float, 
-                    shares int, mkt_cap int)",$mysql_conn))
+function init_accounts_database($mysql_conn, $database) 
+{
+    $accounts_sql = "CREATE TABLE $database.Accounts(username varchar(16), password varchar(32),
+                        email varchar(80), fname varchar(32), lname varchar(32))";
+    if (!mysql_query($accounts_sql ,$mysql_conn))
     {
-        print "Google data table\n";
+        print "Error creating Accounts table: " . mysql_error() . "\n";
     }
-    else
-    {
-        print "Error creating database: " . mysql_error() . "\n";
-    }
+}
 
+function init_finance_database($mysql_conn, $database) 
+{
+    $google_sql = "CREATE TABLE $database.Google_data(ticker varchar(8), evaluation float, volume int, 
+                    mkt_cap int, beta float)";
+    if (!mysql_query($google_sql, $mysql_conn))
+    {
+        print "Error creating google database: " . mysql_error() . "\n";
+    }
 }
 
 function init_database() 
 {
-    $database = "betatrek";
+    $acc_db = "bt_user_accounts";
+    $fin_db = "bt_finance";
+
     $mysql_conn = connect_mysql();
-    connect_database($mysql_conn, $database);
-    init_tables($mysql_conn, $database);
+    create_database($mysql_conn, $acc_db);
+    create_database($mysql_conn, $fin_db);
+
+    select_database($mysql_conn, $acc_db);
+    init_accounts_database($mysql_conn, $acc_db);
+    select_database($mysql_conn, $fin_db);
+    init_finance_database($mysql_conn, $fin_db);
 }
 
 ?>
