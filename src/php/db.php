@@ -69,7 +69,7 @@ function init_finance_database($mysql_conn, $database)
 
     $google_sql = "CREATE TABLE $database.Stock_History(ticker varchar(8) NOT NULL, 
                    day DATE, PRIMARY KEY (ticker, day), beta float, open int,
-                   high int, low int, closed int, volume int)";
+                   high int, low int, close int, volume int)";
     if (!mysql_query($google_sql, $mysql_conn))
     {
         print "Error creating historic data table: " . mysql_error() . "\n";

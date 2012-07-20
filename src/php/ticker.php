@@ -51,4 +51,32 @@ class Stock{
 
 }
 
+class StockHistory {
+    public $ticker;
+    public $day;
+    public $open;
+    public $high;
+    public $low;
+    public $close;
+    public $volume;
+
+    /* Inser the user into the database. */                           
+    public function insertStockHistory() {
+        $fin_db = "bt_finance";
+        $mysql_conn = connect_mysql();
+        select_database($mysql_conn, $fin_db);
+        
+        $sql ="INSERT INTO Stock_History(ticker, day, open, high, low, close, volume) 
+               VALUES('$this->ticker', '$this->day', $this->open, $this->high, 
+               $this->low, $this->close, $this->volume)";
+
+        // print "$sql.\n";
+        if(!mysql_query($sql, $mysql_conn))                            
+        {
+           print "Error inserting Stock". mysql_error();
+        }
+        mysql_close($mysql_conn);
+    }
+}
+
 ?>

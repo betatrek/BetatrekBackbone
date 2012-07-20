@@ -26,24 +26,30 @@ function getGoogleData($Ticker)
     $t = new Stock();
 
     /* Get the data from google finance */
-    $URL = "http://www.google.com/finance?q=".$Ticker;
-    $URL_history = "http://www.google.com/finance/historical?q=".$Ticker;
+    $stock_url = "http://www.google.com/finance?q=".$Ticker;
+    $history_url = "http://www.google.com/finance/historical?q=".$Ticker;
+    $financial_url = "http://www.google.com/finance?q=".$Ticker."&fstype=ii";
+
     $gf_stock = "../../data/".$Ticker."_gf.html";
+    $gf_financial = "../../data/".$Ticker."_gf_financial.html";
     $gf_history = "../../data/".$Ticker."_gf_history.html";
-    system("curl --silent -o $gf_stock \"$URL\"");
-    system("curl --silent -o $gf_history \"$URL_history\"");
+
+    system("curl --silent -o $gf_stock \"$stock_url\"");
+    system("curl --silent -o $gf_history \"$history_url\"");
+    system("curl --silent -o $gf_financial \"$financial_url\"");
 
     /************************************
      Create HTML DOM objects
      ************************************/
     $gf_html = file_get_html($gf_stock);
     $gf_history_html = file_get_html($gf_history);
+    $gf_financial_html = file_get_html($gf_financial);
     // echo $gf_html->plaintext;
 
     /************************************
-     Extract the current data
+     Extract the current data from stock_url
      ************************************/
-    // Find the information tables
+    // Find the company information tables
     $companydata = $gf_html->find('div#companyheader', 0);
     $snapdata0 = $gf_html->find('table.snap-data', 0);
     $snapdata1 = $gf_html->find('table.snap-data', 1);
@@ -79,64 +85,32 @@ function getGoogleData($Ticker)
     $t->beta = floatval($beta);
     $t->insertStock();
 
-    /* Print these tables */
-    /*
-    foreach($snapdata0->find('tr') as $row){
-
-        print "\n";
-
-        foreach($row->find('td') as $cell) {
-
-            // push the cell's text to the array
-            print "$cell->innertext";
-        }
-
-        $rowData = $row->find('td', 1);
-        print $rowData->innertext;
-    }
-    print "\n";
-
-    foreach($snapdata1->find('tr') as $row){
-
-        print "\n";
-
-        foreach($row->find('td') as $cell) {
-
-        // push the cell's text to the array
-        print "$cell->innertext";
-        }
-
-        $rowData = $row->find('td', 1);
-        print $rowData->innertext;
-    }
-    print "\n";
-    print "\n";
-    */
-
-    /* Display the retrieved data */
-    /*
-    print "Current evaluation: $cureval \n";
-    print "Range: $range \n";
-    print "52 W Range: $range_52 \n";
-    print "Open: $open \n";
-    print "volume: $volume \n";
-    print "Mkt cap: $mkt_cap \n";
-    print "P/E: $PE \n";
-    print "div/yield: $div_yield \n";
-    print "EPS: $EPS \n";
-    print "Shares: $shares \n";
-    print "beta: $beta \n";
-    print "inst/own: $inst_own \n";
-    print "**********\n";
-    */
-
     /************************************
-     Extract the historical data
+     Extract the historical data from history_url
      ************************************/
     $histdata = $gf_history_html->find('table.historical_price', 0);
-    // print "$histdata->plaintext\n";
-    $history = $histdata->find('tr', 0);
-    print $history->plaintext;
+    $row = $histdata->find('tr');
+    $nrow = count($row);
+
+    for ($i = 1; $i<$nrow; $i++) {
+        
+        $sh = new StockHistory();
+
+        $cell = $row[$i]->find('td');
+
+        $sh->ticker = $Ticker;
+        $dt = strtotime($cell[0]->plaintext);
+        $hdate = date('Y-m-d', $dt);
+        $sh->day = $hdate;
+        $sh->open = floatval($cell[1]->plaintext);
+        $sh->high = floatval($cell[2]->plaintext);
+        $sh->low = floatval($cell[3]->plaintext);
+        $sh->close = floatval($cell[4]->plaintext);
+        $sh->volume = intval(str_replace(',', '', $cell[5]->plaintext));
+
+        $sh->insertStockHistory();
+
+    }
 }
 
 ?>
